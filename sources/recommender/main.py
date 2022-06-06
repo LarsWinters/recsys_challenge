@@ -1,122 +1,91 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Feb 26 2017
+Author: Weiping Song
+"""
+import os
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
+import argparse
+import model
+import evaluation
 
-# path to recsys data
-PATH = "data"
+from sklearn.model_selection import train_test_split
 
-candidate_items = pd.read_csv(PATH + '/candidate_items.csv')
-item_features = pd.read_csv(PATH + '/item_features.csv')
-train_purchases = pd.read_csv(PATH + '/train_purchases.csv')
-train_sessions = pd.read_csv(PATH + '/train_sessions.csv')
+PATH_TO_TRAIN = 'ratings.csv' #/PATH/TO/rsc15_train_full.txt'
+#PATH_TO_TEST = 'e:/sundog-consult/Udemy/RecSys/GRU4Rec_TensorFlow-master/ratings.csv' #'/PATH/TO/rsc15_test.txt'
 
+class Args():
+    is_training = False
+    layers = 1
+    rnn_size = 100
+    n_epochs = 3
+    batch_size = 50
+    dropout_p_hidden=1
+    learning_rate = 0.001
+    decay = 0.96
+    decay_steps = 1e4
+    sigma = 0
+    init_as_normal = False
+    reset_after_session = True
+    session_key = 'userId'
+    item_key = 'movieId'
+    time_key = 'timestamp'
+    grad_cap = 0
+    test_model = 2
+    checkpoint_dir = './checkpoint'
+    loss = 'cross-entropy'
+    final_act = 'softmax'
+    hidden_act = 'tanh'
+    n_items = -1
 
-def dataStatistics():
-    print(train_sessions.shape)
-    print(train_sessions.nunique())
-    print(train_purchases.shape)
-    final = pd.merge(train_sessions, train_purchases, on="session_id", how="left")
-    print(final.shape)
-    print(final.isnull().sum())
-    print(final.head())
-    final = final.groupby(final['session_id'])['item_id_x'].count().reset_index(name='count')
-    print("Mean amount of items per session: ", final['count'].mean())
-    print("Median amount of items per session: ", final['count'].median())
-    print(candidate_items.nunique())
-    print(item_features.nunique())
-    test = item_features.groupby('item_id', as_index=False)[['feature_category_id', 'feature_value_id']].count()
+def parseArgs():
+    parser = argparse.ArgumentParser(description='GRU4Rec args')
+    parser.add_argument('--layer', default=1, type=int)
+    parser.add_argument('--size', default=100, type=int)
+    parser.add_argument('--epoch', default=3, type=int)
+    parser.add_argument('--lr', default=0.001, type=float)
+    parser.add_argument('--train', default=0, type=int)
+    parser.add_argument('--test', default=2, type=int)
+    parser.add_argument('--hidden_act', default='tanh', type=str)
+    parser.add_argument('--final_act', default='softmax', type=str)
+    parser.add_argument('--loss', default='cross-entropy', type=str)
+    parser.add_argument('--dropout', default='0.5', type=float)
 
-def EDA():
-    # check for null values
-    dfList = [candidate_items, item_features, train_sessions, train_purchases]
-    # date object to datetime
-    train_purchases['date'] = pd.to_datetime(train_purchases['date'])
-    train_sessions['date'] = pd.to_datetime(train_sessions['date'])
-    for i in range(len(dfList)):
-        print("Info on dataframe: ")
-        print()
-        print(dfList[i].isnull().sum())
-        print()
-        print(dfList[i].info())
-        print()
-        print(dfList[i].shape)
-        print()
-    return
-
-def exploreItemFeatures():
-    # unique feature categories
-    count_feature_categories = len(sorted(item_features['feature_category_id'].unique()))
-    print(count_feature_categories, "unique feature categories")
+    return parser.parse_args()
 
 
-    # features per item + distribution
-    features_per_item = item_features.groupby(item_features['item_id'])['feature_category_id'].count().reset_index(name ='count')
-    print(features_per_item)
-    print("Average amount of feature categories per item: ",features_per_item['count'].mean())
-    count_features_per_item = features_per_item['count'].value_counts()[:10].rename_axis('unique_values').reset_index(name='counts')
-    print(count_features_per_item)
-    plt.figure()
-    sns.barplot(count_features_per_item['unique_values'], count_features_per_item['counts'], alpha=0.8,
-                order=count_features_per_item.sort_values('counts', ascending=False).unique_values)
-    plt.title('Distribution of number of features per item')
-    plt.ylabel('Number of Occurrences', fontsize=12)
-    plt.xlabel('Amount of Features per Item', fontsize=12)
-    plt.show()
-
-    # generate feature matrix to get item similarity later on
-    feature_matrix = pd.crosstab(index=item_features['item_id'], columns=item_features['feature_category_id'], values=item_features['feature_value_id'], aggfunc='sum')
-    print("Fill NA with 0")
-    feature_matrix.fillna(0, inplace=True)
-    print(feature_matrix)
-    feature_matrix.shape
-    return
-
-def exploreSessions():
-    # items per session + distribution
-    items_per_session = train_sessions.groupby(train_sessions['session_id'])['item_id'].count().reset_index(
-        name='count')
-    print(items_per_session)
-    print()
-    print("Average amount of items per session: ", items_per_session['count'].mean())
-    print()
-    count_items_per_session = items_per_session['count'].value_counts()[:10].rename_axis('unique_values').reset_index(
-        name='counts')
-    print(count_items_per_session)
-    plt.figure()
-    sns.barplot(count_items_per_session['unique_values'], count_items_per_session['counts'], alpha=0.8,
-                order=count_items_per_session.sort_values('counts', ascending=False).unique_values)
-    plt.title('Distribution of items per session')
-    plt.ylabel('Number of Occurrences', fontsize=12)
-    plt.xlabel('Amount of items per session', fontsize=12)
-    plt.show()
-    return
-
-def explorePurchases():
-    # items per session + distribution
-    purchases_per_session = train_sessions.groupby(train_sessions['session_id'])['item_id'].count().reset_index(
-        name='count')
-    print(purchases_per_session)
-    print()
-    print("Average amount of items per session: ", purchases_per_session['count'].mean())
-    print()
-    count_purchases_per_session = purchases_per_session['count'].value_counts()[:10].rename_axis('unique_values').reset_index(
-        name='counts')
-    print(count_purchases_per_session)
-    plt.figure()
-    sns.barplot(count_purchases_per_session['unique_values'], count_purchases_per_session['counts'], alpha=0.8,
-                order=count_purchases_per_session.sort_values('counts', ascending=False).unique_values)
-    plt.title('Distribution of purchases per session')
-    plt.ylabel('Number of Occurrences', fontsize=12)
-    plt.xlabel('Amount of purchases per session', fontsize=12)
-    plt.show()
-    return
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    #EDA()
-    #exploreItemFeatures()
-    #exploreSessions()
-    #explorePurchases()
-    #dataStatistics()
-
+    command_line = parseArgs()
+    data = pd.read_csv(PATH_TO_TRAIN, dtype={'movieId': np.int64})
+    valid = data.iloc[90000:, :]
+    data = data.iloc[:90000, :]
+    #valid = pd.read_csv(PATH_TO_TEST, dtype={'movieId': np.int64})
+    #data, valid = train_test_split(data, random_state=42)
+    args = Args()
+    args.n_items = len(data['movieId'].unique())
+    args.layers = command_line.layer
+    args.rnn_size = command_line.size
+    args.n_epochs = command_line.epoch
+    args.learning_rate = command_line.lr
+    args.is_training = command_line.train
+    args.test_model = command_line.test
+    args.hidden_act = command_line.hidden_act
+    args.final_act = command_line.final_act
+    args.loss = command_line.loss
+    args.dropout_p_hidden = 1.0 if args.is_training == 0 else command_line.dropout
+    print(args.dropout_p_hidden)
+    if not os.path.exists(args.checkpoint_dir):
+        os.mkdir(args.checkpoint_dir)
+    gpu_config = tf.compat.v1.ConfigProto()
+    gpu_config.gpu_options.allow_growth = True
+    with tf.compat.v1.Session(config=gpu_config) as sess:
+        gru = model.GRU4Rec(sess, args)
+        if args.is_training:
+            gru.fit(data)
+        else:
+            print("Testing")
+            res = evaluation.evaluate_sessions_batch(gru, data, data)
+            print('Recall@20: {}\tMRR@20: {}'.format(res[0], res[1]))
