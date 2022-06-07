@@ -1,0 +1,64 @@
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #a9b7c6;}
+.s3 { color: #808080;}
+.ln { color: #606366; font-weight: normal; font-style: normal; }
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+README.md</font>
+</center></td></tr></table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0"># </span><span class="s2">GRU4Rec_TensorFlow</span>
+<a name="l2"><span class="ln">2    </span></a><span class="s2">TensorFlow implementation of </span><span class="s1">*</span><span class="s2">GRu4Rec</span><span class="s1">*</span><span class="s2">, which was descibed in </span><span class="s1">&quot;</span><span class="s2">Session-based Recommendations With Recurrent Neural Networks</span><span class="s1">&quot;</span><span class="s2">. See paper</span><span class="s1">: http://arxiv.org/abs/1511.06939</span><span class="s2">. </span>
+<a name="l3"><span class="ln">3    </span></a>
+<a name="l4"><span class="ln">4    </span></a><span class="s0"># </span><span class="s2">Requirements</span>
+<a name="l5"><span class="ln">5    </span></a><span class="s2">Python</span><span class="s1">: </span><span class="s2">2.7</span>
+<a name="l6"><span class="ln">6    </span></a>
+<a name="l7"><span class="ln">7    </span></a><span class="s2">Pandas </span><span class="s1">&lt; </span><span class="s2">0.17 </span>
+<a name="l8"><span class="ln">8    </span></a>
+<a name="l9"><span class="ln">9    </span></a><span class="s2">Numpy 1.12.1 or later</span>
+<a name="l10"><span class="ln">10   </span></a>
+<a name="l11"><span class="ln">11   </span></a><span class="s2">TensorFlow</span><span class="s1">: </span><span class="s2">0.12.1</span>
+<a name="l12"><span class="ln">12   </span></a>
+<a name="l13"><span class="ln">13   </span></a><span class="s0"># </span><span class="s2">Usage</span>
+<a name="l14"><span class="ln">14   </span></a><span class="s2">Train/Test file should consists of three columns</span><span class="s1">:   </span>
+<a name="l15"><span class="ln">15   </span></a>
+<a name="l16"><span class="ln">16   </span></a>     <span class="s3">First column: SessionId  </span>
+<a name="l17"><span class="ln">17   </span></a>     <span class="s3">Second column: ItemId  </span>
+<a name="l18"><span class="ln">18   </span></a>     <span class="s3">Third column: Timestamps</span>
+<a name="l19"><span class="ln">19   </span></a>
+<a name="l20"><span class="ln">20   </span></a><span class="s2">To train a model with default parameter settings</span><span class="s1">:</span>
+<a name="l21"><span class="ln">21   </span></a>
+<a name="l22"><span class="ln">22   </span></a>    <span class="s3">$ python main.py    </span>
+<a name="l23"><span class="ln">23   </span></a>
+<a name="l24"><span class="ln">24   </span></a>    <span class="s3">Other optional parameters include:   </span>
+<a name="l25"><span class="ln">25   </span></a>     <span class="s3">--layer: Number of GRU layers. Default is 1.  </span>
+<a name="l26"><span class="ln">26   </span></a>     <span class="s3">--size: Number of hidden units in GRU model. Default is 100.   </span>
+<a name="l27"><span class="ln">27   </span></a>     <span class="s3">--epoch: Runing epochs. Default is 3.   </span>
+<a name="l28"><span class="ln">28   </span></a>     <span class="s3">--lr : Initial learning rate. Default is 0.001.   </span>
+<a name="l29"><span class="ln">29   </span></a>     <span class="s3">--train: Specify whether training(1) or evaluating(0). Default is 1.   </span>
+<a name="l30"><span class="ln">30   </span></a>     <span class="s3">--hidden_act: Activation function used in GRU units. Default is tanh.   </span>
+<a name="l31"><span class="ln">31   </span></a>     <span class="s3">--final_act: Final activation function. Default is softmax.    </span>
+<a name="l32"><span class="ln">32   </span></a>     <span class="s3">--loss: Loss functions, cross-entropy, bpr or top1 loss. Default is cross-entropy.      </span>
+<a name="l33"><span class="ln">33   </span></a>     <span class="s3">--dropout: Dropout rate. Default is 0.5.</span>
+<a name="l34"><span class="ln">34   </span></a>
+<a name="l35"><span class="ln">35   </span></a><span class="s2">To evaluate a trained model</span><span class="s1">:</span>
+<a name="l36"><span class="ln">36   </span></a>
+<a name="l37"><span class="ln">37   </span></a>    <span class="s3">$ python main.py --train 0</span>
+<a name="l38"><span class="ln">38   </span></a>    
+<a name="l39"><span class="ln">39   </span></a>    <span class="s3">One optional parameter is:    </span>
+<a name="l40"><span class="ln">40   </span></a>     <span class="s3">--test: Specify which saved model to evaluate(only used when --train is 0). Default is 2.</span>
+<a name="l41"><span class="ln">41   </span></a>
+<a name="l42"><span class="ln">42   </span></a><span class="s0"># </span><span class="s2">Acknowledgement</span>
+<a name="l43"><span class="ln">43   </span></a><span class="s2">This repository refers a lot to the original </span><span class="s1">[</span><span class="s2">Theano implementation</span><span class="s1">](https://github.com/hidasib/GRU4Rec)</span><span class="s2">.</span>
+<a name="l44"><span class="ln">44   </span></a></pre>
+</body>
+</html>

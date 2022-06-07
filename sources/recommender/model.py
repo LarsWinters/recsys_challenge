@@ -4,8 +4,7 @@ Created on Feb 26, 2017
 @author: Weiping Song
 """
 import os
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 from tensorflow.python.ops import rnn_cell
 import pandas as pd
 import numpy as np

@@ -1,0 +1,299 @@
+<html>
+<head>
+<title>model.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #629755; font-style: italic;}
+.s3 { color: #cc7832;}
+.s4 { color: #6a8759;}
+.s5 { color: #6897bb;}
+.ln { color: #606366; font-weight: normal; font-style: normal; }
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+model.py</font>
+</center></td></tr></table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0"># -*- coding: utf-8 -*-</span>
+<a name="l2"><span class="ln">2    </span></a><span class="s2">&quot;&quot;&quot; 
+<a name="l3"><span class="ln">3    </span></a>Created on Feb 26, 2017 
+<a name="l4"><span class="ln">4    </span></a>@author: Weiping Song 
+<a name="l5"><span class="ln">5    </span></a>&quot;&quot;&quot;</span>
+<a name="l6"><span class="ln">6    </span></a><span class="s3">import </span><span class="s1">os</span>
+<a name="l7"><span class="ln">7    </span></a><span class="s3">import </span><span class="s1">tensorflow </span><span class="s3">as </span><span class="s1">tf</span>
+<a name="l8"><span class="ln">8    </span></a><span class="s3">from </span><span class="s1">tensorflow.python.ops </span><span class="s3">import </span><span class="s1">rnn_cell</span>
+<a name="l9"><span class="ln">9    </span></a><span class="s3">import </span><span class="s1">pandas </span><span class="s3">as </span><span class="s1">pd</span>
+<a name="l10"><span class="ln">10   </span></a><span class="s3">import </span><span class="s1">numpy </span><span class="s3">as </span><span class="s1">np</span>
+<a name="l11"><span class="ln">11   </span></a>
+<a name="l12"><span class="ln">12   </span></a><span class="s3">class </span><span class="s1">GRU4Rec:</span>
+<a name="l13"><span class="ln">13   </span></a>
+<a name="l14"><span class="ln">14   </span></a>    <span class="s3">def </span><span class="s1">__init__(self</span><span class="s3">, </span><span class="s1">sess</span><span class="s3">, </span><span class="s1">args):</span>
+<a name="l15"><span class="ln">15   </span></a>        <span class="s1">self.sess = sess</span>
+<a name="l16"><span class="ln">16   </span></a>        <span class="s1">self.is_training = args.is_training</span>
+<a name="l17"><span class="ln">17   </span></a>
+<a name="l18"><span class="ln">18   </span></a>        <span class="s1">self.layers = args.layers</span>
+<a name="l19"><span class="ln">19   </span></a>        <span class="s1">self.rnn_size = args.rnn_size</span>
+<a name="l20"><span class="ln">20   </span></a>        <span class="s1">self.n_epochs = args.n_epochs</span>
+<a name="l21"><span class="ln">21   </span></a>        <span class="s1">self.batch_size = args.batch_size</span>
+<a name="l22"><span class="ln">22   </span></a>        <span class="s1">self.dropout_p_hidden = args.dropout_p_hidden</span>
+<a name="l23"><span class="ln">23   </span></a>        <span class="s1">self.learning_rate = args.learning_rate</span>
+<a name="l24"><span class="ln">24   </span></a>        <span class="s1">self.decay = args.decay</span>
+<a name="l25"><span class="ln">25   </span></a>        <span class="s1">self.decay_steps = args.decay_steps</span>
+<a name="l26"><span class="ln">26   </span></a>        <span class="s1">self.sigma = args.sigma</span>
+<a name="l27"><span class="ln">27   </span></a>        <span class="s1">self.init_as_normal = args.init_as_normal</span>
+<a name="l28"><span class="ln">28   </span></a>        <span class="s1">self.reset_after_session = args.reset_after_session</span>
+<a name="l29"><span class="ln">29   </span></a>        <span class="s1">self.session_key = args.session_key</span>
+<a name="l30"><span class="ln">30   </span></a>        <span class="s1">self.item_key = args.item_key</span>
+<a name="l31"><span class="ln">31   </span></a>        <span class="s1">self.time_key = args.time_key</span>
+<a name="l32"><span class="ln">32   </span></a>        <span class="s1">self.grad_cap = args.grad_cap</span>
+<a name="l33"><span class="ln">33   </span></a>        <span class="s1">self.n_items = args.n_items</span>
+<a name="l34"><span class="ln">34   </span></a>        <span class="s3">if </span><span class="s1">args.hidden_act == </span><span class="s4">'tanh'</span><span class="s1">:</span>
+<a name="l35"><span class="ln">35   </span></a>            <span class="s1">self.hidden_act = self.tanh</span>
+<a name="l36"><span class="ln">36   </span></a>        <span class="s3">elif </span><span class="s1">args.hidden_act == </span><span class="s4">'relu'</span><span class="s1">:</span>
+<a name="l37"><span class="ln">37   </span></a>            <span class="s1">self.hidden_act = self.relu</span>
+<a name="l38"><span class="ln">38   </span></a>        <span class="s3">else</span><span class="s1">:</span>
+<a name="l39"><span class="ln">39   </span></a>            <span class="s3">raise </span><span class="s1">NotImplementedError</span>
+<a name="l40"><span class="ln">40   </span></a>
+<a name="l41"><span class="ln">41   </span></a>        <span class="s3">if </span><span class="s1">args.loss == </span><span class="s4">'cross-entropy'</span><span class="s1">:</span>
+<a name="l42"><span class="ln">42   </span></a>            <span class="s3">if </span><span class="s1">args.final_act == </span><span class="s4">'tanh'</span><span class="s1">:</span>
+<a name="l43"><span class="ln">43   </span></a>                <span class="s1">self.final_activation = self.softmaxth</span>
+<a name="l44"><span class="ln">44   </span></a>            <span class="s3">else</span><span class="s1">:</span>
+<a name="l45"><span class="ln">45   </span></a>                <span class="s1">self.final_activation = self.softmax</span>
+<a name="l46"><span class="ln">46   </span></a>            <span class="s1">self.loss_function = self.cross_entropy</span>
+<a name="l47"><span class="ln">47   </span></a>        <span class="s3">elif </span><span class="s1">args.loss == </span><span class="s4">'bpr'</span><span class="s1">:</span>
+<a name="l48"><span class="ln">48   </span></a>            <span class="s3">if </span><span class="s1">args.final_act == </span><span class="s4">'linear'</span><span class="s1">:</span>
+<a name="l49"><span class="ln">49   </span></a>                <span class="s1">self.final_activation = self.linear</span>
+<a name="l50"><span class="ln">50   </span></a>            <span class="s3">elif </span><span class="s1">args.final_act == </span><span class="s4">'relu'</span><span class="s1">:</span>
+<a name="l51"><span class="ln">51   </span></a>                <span class="s1">self.final_activation = self.relu</span>
+<a name="l52"><span class="ln">52   </span></a>            <span class="s3">else</span><span class="s1">:</span>
+<a name="l53"><span class="ln">53   </span></a>                <span class="s1">self.final_activation = self.tanh</span>
+<a name="l54"><span class="ln">54   </span></a>            <span class="s1">self.loss_function = self.bpr</span>
+<a name="l55"><span class="ln">55   </span></a>        <span class="s3">elif </span><span class="s1">args.loss == </span><span class="s4">'top1'</span><span class="s1">:</span>
+<a name="l56"><span class="ln">56   </span></a>            <span class="s3">if </span><span class="s1">args.final_act == </span><span class="s4">'linear'</span><span class="s1">:</span>
+<a name="l57"><span class="ln">57   </span></a>                <span class="s1">self.final_activation = self.linear</span>
+<a name="l58"><span class="ln">58   </span></a>            <span class="s3">elif </span><span class="s1">args.final_act == </span><span class="s4">'relu'</span><span class="s1">:</span>
+<a name="l59"><span class="ln">59   </span></a>                <span class="s1">self.final_activatin = self.relu</span>
+<a name="l60"><span class="ln">60   </span></a>            <span class="s3">else</span><span class="s1">:</span>
+<a name="l61"><span class="ln">61   </span></a>                <span class="s1">self.final_activation = self.tanh</span>
+<a name="l62"><span class="ln">62   </span></a>            <span class="s1">self.loss_function = self.top1</span>
+<a name="l63"><span class="ln">63   </span></a>        <span class="s3">else</span><span class="s1">:</span>
+<a name="l64"><span class="ln">64   </span></a>            <span class="s3">raise </span><span class="s1">NotImplementedError</span>
+<a name="l65"><span class="ln">65   </span></a>
+<a name="l66"><span class="ln">66   </span></a>        <span class="s1">self.checkpoint_dir = args.checkpoint_dir</span>
+<a name="l67"><span class="ln">67   </span></a>        <span class="s3">if not </span><span class="s1">os.path.isdir(self.checkpoint_dir):</span>
+<a name="l68"><span class="ln">68   </span></a>            <span class="s3">raise </span><span class="s1">Exception(</span><span class="s4">&quot;[!] Checkpoint Dir not found&quot;</span><span class="s1">)</span>
+<a name="l69"><span class="ln">69   </span></a>
+<a name="l70"><span class="ln">70   </span></a>        <span class="s1">self.build_model()</span>
+<a name="l71"><span class="ln">71   </span></a>        <span class="s1">self.sess.run(tf.compat.v1.global_variables_initializer())</span>
+<a name="l72"><span class="ln">72   </span></a>        <span class="s1">self.saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables()</span><span class="s3">, </span><span class="s1">max_to_keep=</span><span class="s5">10</span><span class="s1">)</span>
+<a name="l73"><span class="ln">73   </span></a>
+<a name="l74"><span class="ln">74   </span></a>        <span class="s3">if </span><span class="s1">self.is_training:</span>
+<a name="l75"><span class="ln">75   </span></a>            <span class="s3">return</span>
+<a name="l76"><span class="ln">76   </span></a>
+<a name="l77"><span class="ln">77   </span></a>        <span class="s0"># use self.predict_state to hold hidden states during prediction.</span>
+<a name="l78"><span class="ln">78   </span></a>        <span class="s1">self.predict_state = [np.zeros([self.batch_size</span><span class="s3">, </span><span class="s1">self.rnn_size]</span><span class="s3">, </span><span class="s1">dtype=np.float32) </span><span class="s3">for </span><span class="s1">_ </span><span class="s3">in </span><span class="s1">range(self.layers)]</span>
+<a name="l79"><span class="ln">79   </span></a>        <span class="s1">ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)</span>
+<a name="l80"><span class="ln">80   </span></a>        <span class="s3">if </span><span class="s1">ckpt </span><span class="s3">and </span><span class="s1">ckpt.model_checkpoint_path:</span>
+<a name="l81"><span class="ln">81   </span></a>            <span class="s1">self.saver.restore(sess</span><span class="s3">, </span><span class="s4">'{}/gru-model-{}'</span><span class="s1">.format(self.checkpoint_dir</span><span class="s3">, </span><span class="s1">args.test_model))</span>
+<a name="l82"><span class="ln">82   </span></a>
+<a name="l83"><span class="ln">83   </span></a>    <span class="s0">########################ACTIVATION FUNCTIONS#########################</span>
+<a name="l84"><span class="ln">84   </span></a>    <span class="s3">def </span><span class="s1">linear(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l85"><span class="ln">85   </span></a>        <span class="s3">return </span><span class="s1">X</span>
+<a name="l86"><span class="ln">86   </span></a>    <span class="s3">def </span><span class="s1">tanh(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l87"><span class="ln">87   </span></a>        <span class="s3">return </span><span class="s1">tf.nn.tanh(X)</span>
+<a name="l88"><span class="ln">88   </span></a>    <span class="s3">def </span><span class="s1">softmax(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l89"><span class="ln">89   </span></a>        <span class="s3">return </span><span class="s1">tf.nn.softmax(X)</span>
+<a name="l90"><span class="ln">90   </span></a>    <span class="s3">def </span><span class="s1">softmaxth(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l91"><span class="ln">91   </span></a>        <span class="s3">return </span><span class="s1">tf.nn.softmax(tf.tanh(X))</span>
+<a name="l92"><span class="ln">92   </span></a>    <span class="s3">def </span><span class="s1">relu(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l93"><span class="ln">93   </span></a>        <span class="s3">return </span><span class="s1">tf.nn.relu(X)</span>
+<a name="l94"><span class="ln">94   </span></a>    <span class="s3">def </span><span class="s1">sigmoid(self</span><span class="s3">, </span><span class="s1">X):</span>
+<a name="l95"><span class="ln">95   </span></a>        <span class="s3">return </span><span class="s1">tf.nn.sigmoid(X)</span>
+<a name="l96"><span class="ln">96   </span></a>
+<a name="l97"><span class="ln">97   </span></a>    <span class="s0">############################LOSS FUNCTIONS######################</span>
+<a name="l98"><span class="ln">98   </span></a>    <span class="s3">def </span><span class="s1">cross_entropy(self</span><span class="s3">, </span><span class="s1">yhat):</span>
+<a name="l99"><span class="ln">99   </span></a>        <span class="s3">return </span><span class="s1">tf.reduce_mean(input_tensor=-tf.math.log(tf.linalg.tensor_diag_part(yhat)+</span><span class="s5">1e-24</span><span class="s1">))</span>
+<a name="l100"><span class="ln">100  </span></a>    <span class="s3">def </span><span class="s1">bpr(self</span><span class="s3">, </span><span class="s1">yhat):</span>
+<a name="l101"><span class="ln">101  </span></a>        <span class="s1">yhatT = tf.transpose(a=yhat)</span>
+<a name="l102"><span class="ln">102  </span></a>        <span class="s3">return </span><span class="s1">tf.reduce_mean(input_tensor=-tf.math.log(tf.nn.sigmoid(tf.linalg.tensor_diag_part(yhat)-yhatT)))</span>
+<a name="l103"><span class="ln">103  </span></a>    <span class="s3">def </span><span class="s1">top1(self</span><span class="s3">, </span><span class="s1">yhat):</span>
+<a name="l104"><span class="ln">104  </span></a>        <span class="s1">yhatT = tf.transpose(a=yhat)</span>
+<a name="l105"><span class="ln">105  </span></a>        <span class="s1">term1 = tf.reduce_mean(input_tensor=tf.nn.sigmoid(-tf.linalg.tensor_diag_part(yhat)+yhatT)+tf.nn.sigmoid(yhatT**</span><span class="s5">2</span><span class="s1">)</span><span class="s3">, </span><span class="s1">axis=</span><span class="s5">0</span><span class="s1">)</span>
+<a name="l106"><span class="ln">106  </span></a>        <span class="s1">term2 = tf.nn.sigmoid(tf.linalg.tensor_diag_part(yhat)**</span><span class="s5">2</span><span class="s1">) / self.batch_size</span>
+<a name="l107"><span class="ln">107  </span></a>        <span class="s3">return </span><span class="s1">tf.reduce_mean(input_tensor=term1 - term2)</span>
+<a name="l108"><span class="ln">108  </span></a>
+<a name="l109"><span class="ln">109  </span></a>    <span class="s3">def </span><span class="s1">build_model(self):</span>
+<a name="l110"><span class="ln">110  </span></a>
+<a name="l111"><span class="ln">111  </span></a>        <span class="s1">self.X = tf.compat.v1.placeholder(tf.int32</span><span class="s3">, </span><span class="s1">[self.batch_size]</span><span class="s3">, </span><span class="s1">name=</span><span class="s4">'input'</span><span class="s1">)</span>
+<a name="l112"><span class="ln">112  </span></a>        <span class="s1">self.Y = tf.compat.v1.placeholder(tf.int32</span><span class="s3">, </span><span class="s1">[self.batch_size]</span><span class="s3">, </span><span class="s1">name=</span><span class="s4">'output'</span><span class="s1">)</span>
+<a name="l113"><span class="ln">113  </span></a>        <span class="s1">self.state = [tf.compat.v1.placeholder(tf.float32</span><span class="s3">, </span><span class="s1">[self.batch_size</span><span class="s3">, </span><span class="s1">self.rnn_size]</span><span class="s3">, </span><span class="s1">name=</span><span class="s4">'rnn_state'</span><span class="s1">) </span><span class="s3">for </span><span class="s1">_ </span><span class="s3">in </span><span class="s1">range(self.layers)]</span>
+<a name="l114"><span class="ln">114  </span></a>        <span class="s1">self.global_step = tf.Variable(</span><span class="s5">0</span><span class="s3">, </span><span class="s1">name=</span><span class="s4">'global_step'</span><span class="s3">, </span><span class="s1">trainable=</span><span class="s3">False</span><span class="s1">)</span>
+<a name="l115"><span class="ln">115  </span></a>
+<a name="l116"><span class="ln">116  </span></a>        <span class="s3">with </span><span class="s1">tf.compat.v1.variable_scope(</span><span class="s4">'gru_layer'</span><span class="s1">):</span>
+<a name="l117"><span class="ln">117  </span></a>            <span class="s1">sigma = self.sigma </span><span class="s3">if </span><span class="s1">self.sigma != </span><span class="s5">0 </span><span class="s3">else </span><span class="s1">np.sqrt(</span><span class="s5">6.0 </span><span class="s1">/ (self.n_items + self.rnn_size))</span>
+<a name="l118"><span class="ln">118  </span></a>            <span class="s3">if </span><span class="s1">self.init_as_normal:</span>
+<a name="l119"><span class="ln">119  </span></a>                <span class="s1">initializer = tf.compat.v1.random_normal_initializer(mean=</span><span class="s5">0</span><span class="s3">, </span><span class="s1">stddev=sigma)</span>
+<a name="l120"><span class="ln">120  </span></a>            <span class="s3">else</span><span class="s1">:</span>
+<a name="l121"><span class="ln">121  </span></a>                <span class="s1">initializer = tf.compat.v1.random_uniform_initializer(minval=-sigma</span><span class="s3">, </span><span class="s1">maxval=sigma)</span>
+<a name="l122"><span class="ln">122  </span></a>            <span class="s1">embedding = tf.compat.v1.get_variable(</span><span class="s4">'embedding'</span><span class="s3">, </span><span class="s1">[self.n_items</span><span class="s3">, </span><span class="s1">self.rnn_size]</span><span class="s3">, </span><span class="s1">initializer=initializer)</span>
+<a name="l123"><span class="ln">123  </span></a>            <span class="s1">softmax_W = tf.compat.v1.get_variable(</span><span class="s4">'softmax_w'</span><span class="s3">, </span><span class="s1">[self.n_items</span><span class="s3">, </span><span class="s1">self.rnn_size]</span><span class="s3">, </span><span class="s1">initializer=initializer)</span>
+<a name="l124"><span class="ln">124  </span></a>            <span class="s1">softmax_b = tf.compat.v1.get_variable(</span><span class="s4">'softmax_b'</span><span class="s3">, </span><span class="s1">[self.n_items]</span><span class="s3">, </span><span class="s1">initializer=tf.compat.v1.constant_initializer(</span><span class="s5">0.0</span><span class="s1">))</span>
+<a name="l125"><span class="ln">125  </span></a>
+<a name="l126"><span class="ln">126  </span></a>            <span class="s1">cell = rnn_cell.GRUCell(self.rnn_size</span><span class="s3">, </span><span class="s1">activation=self.hidden_act)</span>
+<a name="l127"><span class="ln">127  </span></a>            <span class="s1">drop_cell = rnn_cell.DropoutWrapper(cell</span><span class="s3">, </span><span class="s1">output_keep_prob=self.dropout_p_hidden)</span>
+<a name="l128"><span class="ln">128  </span></a>            <span class="s1">stacked_cell = rnn_cell.MultiRNNCell([drop_cell] * self.layers)</span>
+<a name="l129"><span class="ln">129  </span></a>
+<a name="l130"><span class="ln">130  </span></a>            <span class="s1">inputs = tf.nn.embedding_lookup(params=embedding</span><span class="s3">, </span><span class="s1">ids=self.X)</span>
+<a name="l131"><span class="ln">131  </span></a>            <span class="s1">output</span><span class="s3">, </span><span class="s1">state = stacked_cell(inputs</span><span class="s3">, </span><span class="s1">tuple(self.state))</span>
+<a name="l132"><span class="ln">132  </span></a>            <span class="s1">self.final_state = state</span>
+<a name="l133"><span class="ln">133  </span></a>
+<a name="l134"><span class="ln">134  </span></a>        <span class="s3">if </span><span class="s1">self.is_training:</span>
+<a name="l135"><span class="ln">135  </span></a>            <span class="s4">''' 
+<a name="l136"><span class="ln">136  </span></a>            Use other examples of the minibatch as negative samples. 
+<a name="l137"><span class="ln">137  </span></a>            '''</span>
+<a name="l138"><span class="ln">138  </span></a>            <span class="s1">sampled_W = tf.nn.embedding_lookup(params=softmax_W</span><span class="s3">, </span><span class="s1">ids=self.Y)</span>
+<a name="l139"><span class="ln">139  </span></a>            <span class="s1">sampled_b = tf.nn.embedding_lookup(params=softmax_b</span><span class="s3">, </span><span class="s1">ids=self.Y)</span>
+<a name="l140"><span class="ln">140  </span></a>            <span class="s1">logits = tf.matmul(output</span><span class="s3">, </span><span class="s1">sampled_W</span><span class="s3">, </span><span class="s1">transpose_b=</span><span class="s3">True</span><span class="s1">) + sampled_b</span>
+<a name="l141"><span class="ln">141  </span></a>            <span class="s1">self.yhat = self.final_activation(logits)</span>
+<a name="l142"><span class="ln">142  </span></a>            <span class="s1">self.cost = self.loss_function(self.yhat)</span>
+<a name="l143"><span class="ln">143  </span></a>        <span class="s3">else</span><span class="s1">:</span>
+<a name="l144"><span class="ln">144  </span></a>            <span class="s1">logits = tf.matmul(output</span><span class="s3">, </span><span class="s1">softmax_W</span><span class="s3">, </span><span class="s1">transpose_b=</span><span class="s3">True</span><span class="s1">) + softmax_b</span>
+<a name="l145"><span class="ln">145  </span></a>            <span class="s1">self.yhat = self.final_activation(logits)</span>
+<a name="l146"><span class="ln">146  </span></a>
+<a name="l147"><span class="ln">147  </span></a>        <span class="s3">if not </span><span class="s1">self.is_training:</span>
+<a name="l148"><span class="ln">148  </span></a>            <span class="s3">return</span>
+<a name="l149"><span class="ln">149  </span></a>
+<a name="l150"><span class="ln">150  </span></a>        <span class="s1">self.lr = tf.maximum(</span><span class="s5">1e-5</span><span class="s3">,</span><span class="s1">tf.compat.v1.train.exponential_decay(self.learning_rate</span><span class="s3">, </span><span class="s1">self.global_step</span><span class="s3">, </span><span class="s1">self.decay_steps</span><span class="s3">, </span><span class="s1">self.decay</span><span class="s3">, </span><span class="s1">staircase=</span><span class="s3">True</span><span class="s1">))</span>
+<a name="l151"><span class="ln">151  </span></a>
+<a name="l152"><span class="ln">152  </span></a>        <span class="s4">''' 
+<a name="l153"><span class="ln">153  </span></a>        Try different optimizers. 
+<a name="l154"><span class="ln">154  </span></a>        '''</span>
+<a name="l155"><span class="ln">155  </span></a>        <span class="s0">#optimizer = tf.train.AdagradOptimizer(self.lr)</span>
+<a name="l156"><span class="ln">156  </span></a>        <span class="s1">optimizer = tf.compat.v1.train.AdamOptimizer(self.lr)</span>
+<a name="l157"><span class="ln">157  </span></a>        <span class="s0">#optimizer = tf.train.AdadeltaOptimizer(self.lr)</span>
+<a name="l158"><span class="ln">158  </span></a>        <span class="s0">#optimizer = tf.train.RMSPropOptimizer(self.lr)</span>
+<a name="l159"><span class="ln">159  </span></a>
+<a name="l160"><span class="ln">160  </span></a>        <span class="s1">tvars = tf.compat.v1.trainable_variables()</span>
+<a name="l161"><span class="ln">161  </span></a>        <span class="s1">gvs = optimizer.compute_gradients(self.cost</span><span class="s3">, </span><span class="s1">tvars)</span>
+<a name="l162"><span class="ln">162  </span></a>        <span class="s3">if </span><span class="s1">self.grad_cap &gt; </span><span class="s5">0</span><span class="s1">:</span>
+<a name="l163"><span class="ln">163  </span></a>            <span class="s1">capped_gvs = [(tf.clip_by_norm(grad</span><span class="s3">, </span><span class="s1">self.grad_cap)</span><span class="s3">, </span><span class="s1">var) </span><span class="s3">for </span><span class="s1">grad</span><span class="s3">, </span><span class="s1">var </span><span class="s3">in </span><span class="s1">gvs]</span>
+<a name="l164"><span class="ln">164  </span></a>        <span class="s3">else</span><span class="s1">:</span>
+<a name="l165"><span class="ln">165  </span></a>            <span class="s1">capped_gvs = gvs</span>
+<a name="l166"><span class="ln">166  </span></a>        <span class="s1">self.train_op = optimizer.apply_gradients(capped_gvs</span><span class="s3">, </span><span class="s1">global_step=self.global_step)</span>
+<a name="l167"><span class="ln">167  </span></a>
+<a name="l168"><span class="ln">168  </span></a>    <span class="s3">def </span><span class="s1">init(self</span><span class="s3">, </span><span class="s1">data):</span>
+<a name="l169"><span class="ln">169  </span></a>        <span class="s1">data.sort_values([self.session_key</span><span class="s3">, </span><span class="s1">self.time_key]</span><span class="s3">, </span><span class="s1">inplace=</span><span class="s3">True</span><span class="s1">)</span>
+<a name="l170"><span class="ln">170  </span></a>        <span class="s1">offset_sessions = np.zeros(data[self.session_key].nunique()+</span><span class="s5">1</span><span class="s3">, </span><span class="s1">dtype=np.int32)</span>
+<a name="l171"><span class="ln">171  </span></a>        <span class="s1">offset_sessions[</span><span class="s5">1</span><span class="s1">:] = data.groupby(self.session_key).size().cumsum()</span>
+<a name="l172"><span class="ln">172  </span></a>        <span class="s3">return </span><span class="s1">offset_sessions</span>
+<a name="l173"><span class="ln">173  </span></a>
+<a name="l174"><span class="ln">174  </span></a>    <span class="s3">def </span><span class="s1">fit(self</span><span class="s3">, </span><span class="s1">data):</span>
+<a name="l175"><span class="ln">175  </span></a>        <span class="s1">self.error_during_train = </span><span class="s3">False</span>
+<a name="l176"><span class="ln">176  </span></a>        <span class="s1">itemids = data[self.item_key].unique()</span>
+<a name="l177"><span class="ln">177  </span></a>        <span class="s1">self.n_items = len(itemids)</span>
+<a name="l178"><span class="ln">178  </span></a>        <span class="s1">self.itemidmap = pd.Series(data=np.arange(self.n_items)</span><span class="s3">, </span><span class="s1">index=itemids)</span>
+<a name="l179"><span class="ln">179  </span></a>        <span class="s1">data = pd.merge(data</span><span class="s3">, </span><span class="s1">pd.DataFrame({self.item_key:itemids</span><span class="s3">, </span><span class="s4">'ItemIdx'</span><span class="s1">:self.itemidmap[itemids].values})</span><span class="s3">, </span><span class="s1">on=self.item_key</span><span class="s3">, </span><span class="s1">how=</span><span class="s4">'inner'</span><span class="s1">)</span>
+<a name="l180"><span class="ln">180  </span></a>        <span class="s1">offset_sessions = self.init(data)</span>
+<a name="l181"><span class="ln">181  </span></a>        <span class="s1">print(</span><span class="s4">'fitting model...'</span><span class="s1">)</span>
+<a name="l182"><span class="ln">182  </span></a>        <span class="s3">for </span><span class="s1">epoch </span><span class="s3">in </span><span class="s1">range(self.n_epochs):</span>
+<a name="l183"><span class="ln">183  </span></a>            <span class="s1">epoch_cost = []</span>
+<a name="l184"><span class="ln">184  </span></a>            <span class="s1">state = [np.zeros([self.batch_size</span><span class="s3">, </span><span class="s1">self.rnn_size]</span><span class="s3">, </span><span class="s1">dtype=np.float32) </span><span class="s3">for </span><span class="s1">_ </span><span class="s3">in </span><span class="s1">range(self.layers)]</span>
+<a name="l185"><span class="ln">185  </span></a>            <span class="s1">session_idx_arr = np.arange(len(offset_sessions)-</span><span class="s5">1</span><span class="s1">)</span>
+<a name="l186"><span class="ln">186  </span></a>            <span class="s1">iters = np.arange(self.batch_size)</span>
+<a name="l187"><span class="ln">187  </span></a>            <span class="s1">maxiter = iters.max()</span>
+<a name="l188"><span class="ln">188  </span></a>            <span class="s1">start = offset_sessions[session_idx_arr[iters]]</span>
+<a name="l189"><span class="ln">189  </span></a>            <span class="s1">end = offset_sessions[session_idx_arr[iters]+</span><span class="s5">1</span><span class="s1">]</span>
+<a name="l190"><span class="ln">190  </span></a>            <span class="s1">finished = </span><span class="s3">False</span>
+<a name="l191"><span class="ln">191  </span></a>            <span class="s3">while not </span><span class="s1">finished:</span>
+<a name="l192"><span class="ln">192  </span></a>                <span class="s1">minlen = (end-start).min()</span>
+<a name="l193"><span class="ln">193  </span></a>                <span class="s1">out_idx = data.ItemIdx.values[start]</span>
+<a name="l194"><span class="ln">194  </span></a>                <span class="s3">for </span><span class="s1">i </span><span class="s3">in </span><span class="s1">range(minlen-</span><span class="s5">1</span><span class="s1">):</span>
+<a name="l195"><span class="ln">195  </span></a>                    <span class="s1">in_idx = out_idx</span>
+<a name="l196"><span class="ln">196  </span></a>                    <span class="s1">out_idx = data.ItemIdx.values[start+i+</span><span class="s5">1</span><span class="s1">]</span>
+<a name="l197"><span class="ln">197  </span></a>                    <span class="s0"># prepare inputs, targeted outputs and hidden states</span>
+<a name="l198"><span class="ln">198  </span></a>                    <span class="s1">fetches = [self.cost</span><span class="s3">, </span><span class="s1">self.final_state</span><span class="s3">, </span><span class="s1">self.global_step</span><span class="s3">, </span><span class="s1">self.lr</span><span class="s3">, </span><span class="s1">self.train_op]</span>
+<a name="l199"><span class="ln">199  </span></a>                    <span class="s1">feed_dict = {self.X: in_idx</span><span class="s3">, </span><span class="s1">self.Y: out_idx}</span>
+<a name="l200"><span class="ln">200  </span></a>                    <span class="s3">for </span><span class="s1">j </span><span class="s3">in </span><span class="s1">range(self.layers):</span>
+<a name="l201"><span class="ln">201  </span></a>                        <span class="s1">feed_dict[self.state[j]] = state[j]</span>
+<a name="l202"><span class="ln">202  </span></a>
+<a name="l203"><span class="ln">203  </span></a>                    <span class="s1">cost</span><span class="s3">, </span><span class="s1">state</span><span class="s3">, </span><span class="s1">step</span><span class="s3">, </span><span class="s1">lr</span><span class="s3">, </span><span class="s1">_ = self.sess.run(fetches</span><span class="s3">, </span><span class="s1">feed_dict)</span>
+<a name="l204"><span class="ln">204  </span></a>                    <span class="s1">epoch_cost.append(cost)</span>
+<a name="l205"><span class="ln">205  </span></a>                    <span class="s3">if </span><span class="s1">np.isnan(cost):</span>
+<a name="l206"><span class="ln">206  </span></a>                        <span class="s1">print(str(epoch) + </span><span class="s4">':Nan error!'</span><span class="s1">)</span>
+<a name="l207"><span class="ln">207  </span></a>                        <span class="s1">self.error_during_train = </span><span class="s3">True</span>
+<a name="l208"><span class="ln">208  </span></a>                        <span class="s3">return</span>
+<a name="l209"><span class="ln">209  </span></a>                    <span class="s3">if </span><span class="s1">step == </span><span class="s5">1 </span><span class="s3">or </span><span class="s1">step % self.decay_steps == </span><span class="s5">0</span><span class="s1">:</span>
+<a name="l210"><span class="ln">210  </span></a>                        <span class="s1">avgc = np.mean(epoch_cost)</span>
+<a name="l211"><span class="ln">211  </span></a>                        <span class="s1">print(</span><span class="s4">'Epoch {}</span><span class="s3">\t</span><span class="s4">Step {}</span><span class="s3">\t</span><span class="s4">lr: {:.6f}</span><span class="s3">\t</span><span class="s4">loss: {:.6f}'</span><span class="s1">.format(epoch</span><span class="s3">, </span><span class="s1">step</span><span class="s3">, </span><span class="s1">lr</span><span class="s3">, </span><span class="s1">avgc))</span>
+<a name="l212"><span class="ln">212  </span></a>                <span class="s1">start = start+minlen-</span><span class="s5">1</span>
+<a name="l213"><span class="ln">213  </span></a>                <span class="s1">mask = np.arange(len(iters))[(end-start)&lt;=</span><span class="s5">1</span><span class="s1">]</span>
+<a name="l214"><span class="ln">214  </span></a>                <span class="s3">for </span><span class="s1">idx </span><span class="s3">in </span><span class="s1">mask:</span>
+<a name="l215"><span class="ln">215  </span></a>                    <span class="s1">maxiter += </span><span class="s5">1</span>
+<a name="l216"><span class="ln">216  </span></a>                    <span class="s3">if </span><span class="s1">maxiter &gt;= len(offset_sessions)-</span><span class="s5">1</span><span class="s1">:</span>
+<a name="l217"><span class="ln">217  </span></a>                        <span class="s1">finished = </span><span class="s3">True</span>
+<a name="l218"><span class="ln">218  </span></a>                        <span class="s3">break</span>
+<a name="l219"><span class="ln">219  </span></a>                    <span class="s1">iters[idx] = maxiter</span>
+<a name="l220"><span class="ln">220  </span></a>                    <span class="s1">start[idx] = offset_sessions[session_idx_arr[maxiter]]</span>
+<a name="l221"><span class="ln">221  </span></a>                    <span class="s1">end[idx] = offset_sessions[session_idx_arr[maxiter]+</span><span class="s5">1</span><span class="s1">]</span>
+<a name="l222"><span class="ln">222  </span></a>                <span class="s3">if </span><span class="s1">len(mask) </span><span class="s3">and </span><span class="s1">self.reset_after_session:</span>
+<a name="l223"><span class="ln">223  </span></a>                    <span class="s3">for </span><span class="s1">i </span><span class="s3">in </span><span class="s1">range(self.layers):</span>
+<a name="l224"><span class="ln">224  </span></a>                        <span class="s1">state[i][mask] = </span><span class="s5">0</span>
+<a name="l225"><span class="ln">225  </span></a>
+<a name="l226"><span class="ln">226  </span></a>            <span class="s1">avgc = np.mean(epoch_cost)</span>
+<a name="l227"><span class="ln">227  </span></a>            <span class="s3">if </span><span class="s1">np.isnan(avgc):</span>
+<a name="l228"><span class="ln">228  </span></a>                <span class="s1">print(</span><span class="s4">'Epoch {}: Nan error!'</span><span class="s1">.format(epoch</span><span class="s3">, </span><span class="s1">avgc))</span>
+<a name="l229"><span class="ln">229  </span></a>                <span class="s1">self.error_during_train = </span><span class="s3">True</span>
+<a name="l230"><span class="ln">230  </span></a>                <span class="s3">return</span>
+<a name="l231"><span class="ln">231  </span></a>            <span class="s1">self.saver.save(self.sess</span><span class="s3">, </span><span class="s4">'{}/gru-model'</span><span class="s1">.format(self.checkpoint_dir)</span><span class="s3">, </span><span class="s1">global_step=epoch)</span>
+<a name="l232"><span class="ln">232  </span></a>
+<a name="l233"><span class="ln">233  </span></a>    <span class="s3">def </span><span class="s1">predict_next_batch(self</span><span class="s3">, </span><span class="s1">session_ids</span><span class="s3">, </span><span class="s1">input_item_ids</span><span class="s3">, </span><span class="s1">itemidmap</span><span class="s3">, </span><span class="s1">batch=</span><span class="s5">50</span><span class="s1">):</span>
+<a name="l234"><span class="ln">234  </span></a>        <span class="s2">''' 
+<a name="l235"><span class="ln">235  </span></a>        Gives predicton scores for a selected set of items. Can be used in batch mode to predict for multiple independent events (i.e. events of different sessions) at once and thus speed up evaluation. 
+<a name="l236"><span class="ln">236  </span></a> 
+<a name="l237"><span class="ln">237  </span></a>        If the session ID at a given coordinate of the session_ids parameter remains the same during subsequent calls of the function, the corresponding hidden state of the network will be kept intact (i.e. that's how one can predict an item to a session). 
+<a name="l238"><span class="ln">238  </span></a>        If it changes, the hidden state of the network is reset to zeros. 
+<a name="l239"><span class="ln">239  </span></a> 
+<a name="l240"><span class="ln">240  </span></a>        Parameters 
+<a name="l241"><span class="ln">241  </span></a>        -------- 
+<a name="l242"><span class="ln">242  </span></a>        session_ids : 1D array 
+<a name="l243"><span class="ln">243  </span></a>            Contains the session IDs of the events of the batch. Its length must equal to the prediction batch size (batch param). 
+<a name="l244"><span class="ln">244  </span></a>        input_item_ids : 1D array 
+<a name="l245"><span class="ln">245  </span></a>            Contains the item IDs of the events of the batch. Every item ID must be must be in the training data of the network. Its length must equal to the prediction batch size (batch param). 
+<a name="l246"><span class="ln">246  </span></a>        batch : int 
+<a name="l247"><span class="ln">247  </span></a>            Prediction batch size. 
+<a name="l248"><span class="ln">248  </span></a> 
+<a name="l249"><span class="ln">249  </span></a>        Returns 
+<a name="l250"><span class="ln">250  </span></a>        -------- 
+<a name="l251"><span class="ln">251  </span></a>        out : pandas.DataFrame 
+<a name="l252"><span class="ln">252  </span></a>            Prediction scores for selected items for every event of the batch. 
+<a name="l253"><span class="ln">253  </span></a>            Columns: events of the batch; rows: items. Rows are indexed by the item IDs. 
+<a name="l254"><span class="ln">254  </span></a> 
+<a name="l255"><span class="ln">255  </span></a>        '''</span>
+<a name="l256"><span class="ln">256  </span></a>        <span class="s3">if </span><span class="s1">batch != self.batch_size:</span>
+<a name="l257"><span class="ln">257  </span></a>            <span class="s3">raise </span><span class="s1">Exception(</span><span class="s4">'Predict batch size({}) must match train batch size({})'</span><span class="s1">.format(batch</span><span class="s3">, </span><span class="s1">self.batch_size))</span>
+<a name="l258"><span class="ln">258  </span></a>        <span class="s3">if not </span><span class="s1">self.predict:</span>
+<a name="l259"><span class="ln">259  </span></a>            <span class="s1">self.current_session = np.ones(batch) * -</span><span class="s5">1</span>
+<a name="l260"><span class="ln">260  </span></a>            <span class="s1">self.predict = </span><span class="s3">True</span>
+<a name="l261"><span class="ln">261  </span></a>
+<a name="l262"><span class="ln">262  </span></a>        <span class="s1">session_change = np.arange(batch)[session_ids != self.current_session]</span>
+<a name="l263"><span class="ln">263  </span></a>        <span class="s3">if </span><span class="s1">len(session_change) &gt; </span><span class="s5">0</span><span class="s1">: </span><span class="s0"># change internal states with session changes</span>
+<a name="l264"><span class="ln">264  </span></a>            <span class="s3">for </span><span class="s1">i </span><span class="s3">in </span><span class="s1">range(self.layers):</span>
+<a name="l265"><span class="ln">265  </span></a>                <span class="s1">self.predict_state[i][session_change] = </span><span class="s5">0.0</span>
+<a name="l266"><span class="ln">266  </span></a>            <span class="s1">self.current_session=session_ids.copy()</span>
+<a name="l267"><span class="ln">267  </span></a>
+<a name="l268"><span class="ln">268  </span></a>        <span class="s1">in_idxs = itemidmap[input_item_ids]</span>
+<a name="l269"><span class="ln">269  </span></a>        <span class="s1">fetches = [self.yhat</span><span class="s3">, </span><span class="s1">self.final_state]</span>
+<a name="l270"><span class="ln">270  </span></a>        <span class="s1">feed_dict = {self.X: in_idxs}</span>
+<a name="l271"><span class="ln">271  </span></a>        <span class="s3">for </span><span class="s1">i </span><span class="s3">in </span><span class="s1">range(self.layers):</span>
+<a name="l272"><span class="ln">272  </span></a>            <span class="s1">feed_dict[self.state[i]] = self.predict_state[i]</span>
+<a name="l273"><span class="ln">273  </span></a>        <span class="s1">preds</span><span class="s3">, </span><span class="s1">self.predict_state = self.sess.run(fetches</span><span class="s3">, </span><span class="s1">feed_dict)</span>
+<a name="l274"><span class="ln">274  </span></a>        <span class="s1">preds = np.asarray(preds).T</span>
+<a name="l275"><span class="ln">275  </span></a>        <span class="s3">return </span><span class="s1">pd.DataFrame(data=preds</span><span class="s3">, </span><span class="s1">index=itemidmap.index)</span>
+<a name="l276"><span class="ln">276  </span></a>
+<a name="l277"><span class="ln">277  </span></a></pre>
+</body>
+</html>

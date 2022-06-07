@@ -1,0 +1,91 @@
+TensorFlow 2.0 Upgrade Script
+-----------------------------
+Converted 3 files
+Detected 7 issues that require attention
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+File: /Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py
+--------------------------------------------------------------------------------
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:122:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:123:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:124:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:130:21: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:138:24: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:139:24: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py:231:12: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+================================================================================
+Detailed log follows:
+
+================================================================================
+================================================================================
+Input tree: '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender'
+================================================================================
+--------------------------------------------------------------------------------
+Processing file '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/evaluation.py'
+ outputting to '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender_v3/evaluation.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/model.py'
+ outputting to '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender_v3/model.py'
+--------------------------------------------------------------------------------
+
+71:22: INFO: Renamed 'tf.global_variables_initializer' to 'tf.compat.v1.global_variables_initializer'
+72:21: INFO: Renamed 'tf.train.Saver' to 'tf.compat.v1.train.Saver'
+72:36: INFO: Renamed 'tf.global_variables' to 'tf.compat.v1.global_variables'
+99:15: INFO: Added keywords to args of function 'tf.reduce_mean'
+99:31: INFO: Renamed 'tf.log' to 'tf.math.log'
+99:38: INFO: Renamed 'tf.diag_part' to 'tf.linalg.tensor_diag_part'
+101:16: INFO: Added keywords to args of function 'tf.transpose'
+102:15: INFO: Added keywords to args of function 'tf.reduce_mean'
+102:31: INFO: Renamed 'tf.log' to 'tf.math.log'
+102:52: INFO: Renamed 'tf.diag_part' to 'tf.linalg.tensor_diag_part'
+104:16: INFO: Added keywords to args of function 'tf.transpose'
+105:16: INFO: Added keywords to args of function 'tf.reduce_mean'
+105:46: INFO: Renamed 'tf.diag_part' to 'tf.linalg.tensor_diag_part'
+106:30: INFO: Renamed 'tf.diag_part' to 'tf.linalg.tensor_diag_part'
+107:15: INFO: Added keywords to args of function 'tf.reduce_mean'
+111:17: INFO: Renamed 'tf.placeholder' to 'tf.compat.v1.placeholder'
+112:17: INFO: Renamed 'tf.placeholder' to 'tf.compat.v1.placeholder'
+113:22: INFO: Renamed 'tf.placeholder' to 'tf.compat.v1.placeholder'
+116:13: INFO: Renamed 'tf.variable_scope' to 'tf.compat.v1.variable_scope'
+119:30: INFO: tf.random_normal_initializer requires manual check. Initializers no longer have the dtype argument in the constructor or partition_info argument in the __call__ method.
+The calls have been converted to compat.v1 for safety (even though they may already have been correct).
+119:30: INFO: Renamed 'tf.random_normal_initializer' to 'tf.compat.v1.random_normal_initializer'
+121:30: INFO: tf.random_uniform_initializer requires manual check. Initializers no longer have the dtype argument in the constructor or partition_info argument in the __call__ method.
+The calls have been converted to compat.v1 for safety (even though they may already have been correct).
+121:30: INFO: Renamed 'tf.random_uniform_initializer' to 'tf.compat.v1.random_uniform_initializer'
+122:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+122:24: INFO: Renamed 'tf.get_variable' to 'tf.compat.v1.get_variable'
+123:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+123:24: INFO: Renamed 'tf.get_variable' to 'tf.compat.v1.get_variable'
+124:24: WARNING: tf.get_variable requires manual check. tf.get_variable returns ResourceVariables by default in 2.0, which have well-defined semantics and are stricter about shapes. You can disable this behavior by passing use_resource=False, or by calling tf.compat.v1.disable_resource_variables().
+124:24: INFO: Renamed 'tf.get_variable' to 'tf.compat.v1.get_variable'
+124:81: INFO: tf.constant_initializer requires manual check. Initializers no longer have the dtype argument in the constructor or partition_info argument in the __call__ method.
+The calls have been converted to compat.v1 for safety (even though they may already have been correct).
+124:81: INFO: Renamed 'tf.constant_initializer' to 'tf.compat.v1.constant_initializer'
+130:21: INFO: Added keywords to args of function 'tf.nn.embedding_lookup'
+130:21: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+138:24: INFO: Added keywords to args of function 'tf.nn.embedding_lookup'
+138:24: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+139:24: INFO: Added keywords to args of function 'tf.nn.embedding_lookup'
+139:24: WARNING: tf.nn.embedding_lookup requires manual check. `partition_strategy` has been removed from tf.nn.embedding_lookup.  The 'div' strategy will be used by default.
+150:34: INFO: tf.train.exponential_decay requires manual check. To use learning rate decay schedules with TensorFlow 2.0, switch to the schedules in `tf.keras.optimizers.schedules`.
+
+150:34: INFO: Renamed 'tf.train.exponential_decay' to 'tf.compat.v1.train.exponential_decay'
+156:20: INFO: Renamed 'tf.train.AdamOptimizer' to 'tf.compat.v1.train.AdamOptimizer'
+160:16: INFO: Renamed 'tf.trainable_variables' to 'tf.compat.v1.trainable_variables'
+231:12: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender/main.py'
+ outputting to '/Users/lucas/PycharmProjects/recsys_challenge/sources/recommender_v3/main.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+

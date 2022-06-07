@@ -16,11 +16,13 @@ def dataStatistics():
     print(train_sessions.shape)
     print(train_sessions.nunique())
     print(train_purchases.shape)
-    final = pd.merge(train_sessions, train_purchases, on="session_id", how="left")
+    final = pd.concat([train_sessions, train_purchases])
+    #print(final.where(final['session_id']==3, inplace=True))
+    final[:5000].to_csv('final.csv')
     print(final.shape)
     print(final.isnull().sum())
     print(final.head())
-    final = final.groupby(final['session_id'])['item_id_x'].count().reset_index(name='count')
+    final = final.groupby(final['session_id'])['item_id'].count().reset_index(name='count')
     print("Mean amount of items per session: ", final['count'].mean())
     print("Median amount of items per session: ", final['count'].median())
     print(candidate_items.nunique())
@@ -118,5 +120,6 @@ if __name__ == '__main__':
     #exploreItemFeatures()
     #exploreSessions()
     #explorePurchases()
-    #dataStatistics()
+    dataStatistics()
+
 
